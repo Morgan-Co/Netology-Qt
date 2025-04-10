@@ -20,9 +20,19 @@ MainWindow::MainWindow(QWidget *parent)
         ui->lap_list->clear();
     });
     connect(ui->push_lap, &QPushButton::clicked, this, [=]() {
-        stopwatch.lap();
+        Lap newLap = stopwatch.lap();
+        int currentLap = newLap.lapTime;
+        int seconds = currentLap / 1000;
+        int ms = (currentLap / 100) % 10;
+
+        QString formatedLap = QString("Lap %1: %2.%3s")
+                                  .arg(newLap.lapId)
+                                  .arg(seconds, 2, 10, QChar('0'))
+                                  .arg(ms, 2, 10, QChar('0'));
+
+
+        ui->lap_list->addItem(formatedLap);
     });
-    connect(&stopwatch, &Stopwatch::lapsUpdated, this, &MainWindow::updateLaps);
 }
 
 void MainWindow::toggleStartStop() {
@@ -42,22 +52,6 @@ void MainWindow::updateDisplay(const QString &time) {
     ui->timer_value->setText(time);
 }
 
-void MainWindow::updateLaps(const QList<Lap> &laps) {
-    ui->lap_list->clear();
-    for (int i = 0; i < laps.size(); ++i) {
-        int currentLap = laps[i].lapTime;
-        int seconds = currentLap / 1000;
-        int ms = (currentLap % 1000) / 60;
-
-        QString formatedLap = QString("Lap %1: %2.%3s")
-                                   .arg(laps[i].lapsCount)
-                                   .arg(seconds, 2, 10, QChar('0'))
-                                  .arg(ms, 2, 10, QChar('0'));
-
-
-        ui->lap_list->addItem(formatedLap);
-    }
-}
 
 MainWindow::~MainWindow()
 {

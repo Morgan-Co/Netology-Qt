@@ -28,32 +28,28 @@ void Stopwatch::stop() {
 
 void Stopwatch::reset() {
     if (elapsedTimer.isValid()) {
-        timer.stop();
+        elapsedTimer.restart();
         storedTime = 0;
-        laps.clear();
     }
     running = false;
 }
 
-void Stopwatch::lap() {
-    if (!elapsedTimer.isValid()) return;
-    qint64 time = storedTime + elapsedTimer.elapsed();
-    qint64 lapTime = time;
+Lap Stopwatch::lap() {
+    static int lapId = 1;
+    qint64 currentTime = storedTime + elapsedTimer.elapsed();
+    qint64 lapTime = currentTime - lastLap;
+    lastLap = elapsedTimer.elapsed();
 
-    if (!laps.isEmpty()) {
-        lapTime -= laps.last().totalElapsed;
-    }
+    Lap newLap{ currentTime, lapTime, lapId };
+    lapId++;
 
-    Lap newLap { time, lapTime, laps.length() + 1 };
-    laps.append(newLap);
-
-    emit lapsUpdated(laps);
+    return newLap;
 }
 
 void Stopwatch::elapsedTime() {
     qint64 time = storedTime + elapsedTimer.elapsed();
     int seconds = time / 1000;
-    int ms = (time % 1000) / 60;
+    int ms = (time / 100) % 10;
 
     QString formatedTime = QString("%1.%2")
                                .arg(seconds, 2, 10, QChar('0'))
