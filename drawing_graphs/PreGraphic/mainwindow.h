@@ -9,10 +9,6 @@
 #include <QtConcurrent>
 #include <algorithm>
 
-///Подключаем все что нужно для графиков
-#include <QLineSeries>
-#include <QtCharts>
-#include <QChartView>
 
 #define FD 1000.0 //частота дискретизации
 
@@ -43,8 +39,10 @@ public:
 private slots:
     void on_pb_path_clicked();
     void on_pb_start_clicked();
+    void displayGraph(QVector<double> data);
 
-
+signals:
+    void graphReady(QVector<double> data);
 
 private:
     Ui::MainWindow *ui;

@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "qcustomplot.h"
+#include <QVBoxLayout>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -8,7 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     ui->pb_clearResult->setCheckable(true);
 
-
+    connect(this, &MainWindow::graphReady, this, &MainWindow::displayGraph);
 }
 
 MainWindow::~MainWindow()
@@ -215,17 +217,16 @@ void MainWindow::on_pb_start_clicked()
 
     auto read = [&]{ return ReadFile(pathToFile, numberSelectChannel); };
     auto process = [&](QVector<uint32_t> res){ return ProcessFile(res);};
-    auto findMax = [&](QVector<double> res){
-                                                maxs = FindMax(res);
-                                                mins = FindMin(res);
-                                                DisplayResult(mins, maxs);
+    auto findMax = [&](QVector<double> res) {
+        maxs = FindMax(res);
+        mins = FindMin(res);
+        DisplayResult(mins, maxs);
 
-                                                /*
-                                                 * Тут необходимо реализовать код наполнения серии
-                                                 * и вызов сигнала для отображения графика
-                                                 */
+        int count = qMin(res.size(), 1000);
+        QVector<double> firstSecondData = res.mid(0, count);
 
-                                             };
+        emit graphReady(firstSecondData);
+    };
 
     auto result = QtConcurrent::run(read)
                                .then(process)
@@ -234,5 +235,53 @@ void MainWindow::on_pb_start_clicked()
 
 
 }
+
+
+void MainWindow::displayGraph(QVector<double> data) {
+    QWidget *graphWindow = new QWidget();
+    graphWindow->setAttribute(Qt::WA_DeleteOnClose);
+    graphWindow->setWindowTitle("Graph: first second");
+    graphWindow->resize(800, 600);
+
+    QVBoxLayout *layout = new QVBoxLayout(graphWindow);
+    QCustomPlot *customPlot = new QCustomPlot(graphWindow);
+    layout->addWidget(customPlot);
+
+    QVector<double> x(data.size());
+    for (int i = 0; i < data.size(); ++i) {
+        x[i] = i / FD;
+    }
+
+
+    customPlot->addGraph();
+    customPlot->graph(0)->setData(x, data);
+    customPlot->graph()->setLineStyle(QCPGraph::lsLine);
+    customPlot->xAxis->setLabel("Time (s)");
+    customPlot->yAxis->setLabel("Amplitude");
+
+    customPlot->xAxis->setRange(0, 1);
+    customPlot->yAxis->rescale();
+    customPlot->replot();
+
+    graphWindow->show();
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

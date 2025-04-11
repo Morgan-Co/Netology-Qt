@@ -31,7 +31,6 @@ void Stopwatch::reset() {
         elapsedTimer.restart();
         storedTime = 0;
     }
-    running = false;
 }
 
 Lap Stopwatch::lap() {

@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent Charts)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent PrintSupport)
 
 
 set(PROJECT_SOURCES
@@ -17,16 +17,17 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
+        qcustomplot/qcustomplot.cpp
 )
 
 
 add_executable(PreGraphic
     ${PROJECT_SOURCES}
+
 )
 
 
-target_link_libraries(PreGraphic Qt6::Widgets
-                                      Qt6::Concurrent
-                                    Qt6::Charts)
+target_link_libraries(PreGraphic Qt6::Widgets Qt6::Concurrent Qt${QT_VERSION_MAJOR}::PrintSupport)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot)
 
 
