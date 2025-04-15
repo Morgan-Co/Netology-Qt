@@ -45,6 +45,9 @@ MainWindow::MainWindow(QWidget *parent)
      */
     connect(dataBase, &DataBase::sig_SendStatusConnection, this, &MainWindow::ReceiveStatusConnectionToDB);
 
+    connect(this, &MainWindow::sig_RequestToDb, dataBase, &DataBase::RequestToDB);
+    connect(dataBase, &DataBase::sig_SendDataFromDB, this, &MainWindow::ScreenDataFromDB);
+
 }
 
 MainWindow::~MainWindow()
@@ -94,13 +97,32 @@ void MainWindow::on_act_connect_triggered()
 
 }
 
+void MainWindow::on_pb_clear_clicked() {
+    ui->tb_result->clear();
+    ui->tb_result->setRowCount(0);
+    ui->tb_result->setColumnCount(0);
+}
+
 /*!
  * \brief Обработчик кнопки "Получить"
  */
 void MainWindow::on_pb_request_clicked() {
 
-    qDebug() << ui->cb_category->currentIndex();
-    emit sig_RequestToDb("");
+    switch (ui->cb_category->currentIndex()) {
+    case 0: {
+        emit sig_RequestToDb("");
+        break;
+    }
+    case 1: {
+        emit sig_RequestToDb("Comedy");
+        break;
+    }
+    case 2: {
+        emit sig_RequestToDb("Horror");
+    }
+    default:
+        break;
+    }
 
 }
 
@@ -111,11 +133,36 @@ void MainWindow::on_pb_request_clicked() {
  */
 void MainWindow::ScreenDataFromDB(const QTableWidget *widget, int typeRequest)
 {
+    // Убедимся, что widget не пустой
+    if (widget == nullptr) {
+        qDebug() << "Widget is nullptr!";
+        return;
+    }
 
-    ///Тут должен быть код ДЗ
+    // Получаем количество строк и столбцов в переданной таблице
+    int rowCount = widget->rowCount();
+    int columnCount = widget->columnCount();
 
+    // Проверим тип запроса и обработаем по-разному, если нужно
+    if (typeRequest == 1) {
+        // Например, для первого типа запроса: выводим данные в ui.tb_result
+        ui->tb_result->setRowCount(rowCount);
+        ui->tb_result->setColumnCount(columnCount);
 
+        // Переносим данные из widget в ui->tb_result
+        for (int row = 0; row < rowCount; ++row) {
+            for (int col = 0; col < columnCount; ++col) {
+                // Получаем данные из переданной таблицы
+                QString data = widget->item(row, col)->text();
+
+                // Устанавливаем данные в целевую таблицу
+                ui->tb_result->setItem(row, col, new QTableWidgetItem(data));
+            }
+        }
+    }
 }
+
+
 /*!
  * \brief Метод изменяет стотояние формы в зависимости от статуса подключения к БД
  * \param status

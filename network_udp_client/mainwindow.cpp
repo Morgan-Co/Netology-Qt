@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
 
         outStr << dateTime;
 
-        udpWorker->SendDatagram(dataToSend, ESocketType::DateTimeSocket);
+        udpWorker->SendDatagram(dataToSend);
         timer->start(TIMER_DELAY);
 
     });
@@ -42,7 +42,7 @@ void MainWindow::on_pb_start_clicked()
 }
 
 
-void MainWindow::DisplayTime(QVariant data)
+void MainWindow::DisplayTime(QVariant data, uint32_t data_size, QHostAddress senderAddress)
 {
     switch (data.typeId()) {
     case QMetaType::QDateTime: {
@@ -58,6 +58,9 @@ void MainWindow::DisplayTime(QVariant data)
     case QMetaType::QString: {
         counterPck++;
         ui->te_result->append("User: " + data.toString() + ". Accepted packages " + QString::number(counterPck));
+        QMessageBox *msg_box = new QMessageBox;
+        msg_box->setText("Accept new message from: " + senderAddress.toString() + " Size of message: " + QString::number(data_size));
+        msg_box->show();
     }
 
     default: break;
@@ -86,7 +89,7 @@ void MainWindow::on_pb_send_datagram_clicked() {
     QDataStream outStr(&dataToSend, QIODevice::WriteOnly);
 
     outStr << message;
-    udpWorker->SendDatagram(dataToSend, ESocketType::MessageSocket);
+    udpWorker->SendDatagram(dataToSend);
 }
 
 

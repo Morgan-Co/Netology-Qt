@@ -1,6 +1,7 @@
 #include "database.h"
 
 #include <QSqlQuery>
+#include <QSqlQueryModel>
 
 DataBase::DataBase(QObject *parent)
     : QObject{parent}
@@ -43,8 +44,6 @@ void DataBase::ConnectToDataBase(QVector<QString> data)
     dataBase->setPort(data[port].toInt());
 
 
-    ///Тут должен быть код ДЗ
-
 
     bool status;
     status = dataBase->open();
@@ -68,12 +67,63 @@ void DataBase::DisconnectFromDataBase(QString nameDb)
  * \return
  */
 void DataBase::RequestToDB(QString request) {
-    QSqlQuery query;
+    QString str_query = request != "" ? R"(
+        SELECT title, description
+        FROM film f
+        JOIN film_category fc ON f.film_id = fc.film_id
+        JOIN category c ON c.category_id = fc.category_id
+        WHERE c.name = :genre
+    )" : R"(
+        SELECT title, description
+        FROM film f
+        JOIN film_category fc ON f.film_id = fc.film_id
+        JOIN category c ON c.category_id = fc.category_id
+    )";
 
-    if (query.exec("SELECT title, description FROM film f JOIN film_category fc on f.film_id = fc.film_id JOIN category c on c.category_id = fc.category_id WHERE c.name = 'Comedy' ('Horror')")) {
-        qDebug() << "Yes";
+    if (dataBase->isOpen()) {
+        QSqlQuery query(*dataBase);
+
+        query.prepare(str_query);
+        if (request != "") query.bindValue(":genre", request);
+        if (!query.exec()) {
+            qDebug() << "Query execution failed:" << query.lastError().text();
+            return;
+        }
+
+        qDebug() << "Number of rows returned:" << query.size();
+
+        QSqlQueryModel *model = new QSqlQueryModel();
+        model->setQuery(std::move(query));
+
+        if (model->lastError().isValid()) {
+            qDebug() << "Model error:" << model->lastError().text();
+            return;
+        }
+
+        qDebug() << "Database is open";
+        qDebug() << "Executed request:" << str_query;
+        qDebug() << "Bound value for :genre:" << request;
+
+        QTableWidget *tableWg = new QTableWidget();
+        tableWg->setRowCount(model->rowCount());
+        tableWg->setColumnCount(model->columnCount());
+
+        for (int row = 0; row < model->rowCount(); ++row) {
+            for (int col = 0; col < model->columnCount(); ++col) {
+                QTableWidgetItem *newItem = new QTableWidgetItem(model->data(model->index(row, col)).toString());
+                tableWg->setItem(row, col, newItem);
+            }
+        }
+
+        int typeR = 1;
+        emit sig_SendDataFromDB(tableWg, typeR);
+    } else {
+        qDebug() << "Database is NOT open!";
     }
 }
+
+
+
 
 /*!
  * @brief Метод возвращает последнюю ошибку БД

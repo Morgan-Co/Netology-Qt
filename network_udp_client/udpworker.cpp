@@ -3,15 +3,10 @@
 UDPworker::UDPworker(QObject *parent) : QObject(parent) {}
 
 void UDPworker::InitSockets() {
-    datetimeUdpSocket = new QUdpSocket(this);
-    datetimeUdpSocket->bind(QHostAddress::LocalHost, BIND_PORT);
+    serviceUdpSocket = new QUdpSocket(this);
+    serviceUdpSocket->bind(QHostAddress::LocalHost, BIND_PORT);
 
-    messageUdpSocket = new QUdpSocket(this);
-    messageUdpSocket->bind(QHostAddress::LocalHost, MESSAGE_PORT);
-
-    connect(datetimeUdpSocket, &QUdpSocket::readyRead, this, &UDPworker::readPendingDatagrams);
-    connect(messageUdpSocket, &QUdpSocket::readyRead, this, &UDPworker::readPendingDatagrams);
-
+    connect(serviceUdpSocket, &QUdpSocket::readyRead, this, &UDPworker::readPendingDatagrams);
 }
 
 void UDPworker::ReadDatagram(QNetworkDatagram datagram) {
@@ -22,29 +17,17 @@ void UDPworker::ReadDatagram(QNetworkDatagram datagram) {
     QVariant data;
     inStr >> data;
 
-    emit sig_dataToGUI(data);
+    emit sig_dataToGUI(data, byteData.size(), datagram.senderAddress());
 }
 
-void UDPworker::SendDatagram(QByteArray data, ESocketType socketType) {
-    switch (socketType) {
-    case ESocketType::DateTimeSocket: {
-        datetimeUdpSocket->writeDatagram(data, QHostAddress::LocalHost, BIND_PORT);
-        break;
-    }
-    case ESocketType::MessageSocket: {
-        messageUdpSocket->writeDatagram(data, QHostAddress::LocalHost, MESSAGE_PORT);
-    }
-    default: break;
-    }
+void UDPworker::SendDatagram(QByteArray data) {
+    serviceUdpSocket->writeDatagram(data, QHostAddress::LocalHost, BIND_PORT);
 }
 
 
 void UDPworker::readPendingDatagrams() {
-    QUdpSocket *senderSocket = qobject_cast<QUdpSocket*>(sender());
-    if (!senderSocket) return;
-
-    while(senderSocket->hasPendingDatagrams()) {
-        QNetworkDatagram datagram = senderSocket->receiveDatagram();
+    while(serviceUdpSocket->hasPendingDatagrams()){
+        QNetworkDatagram datagram = serviceUdpSocket->receiveDatagram();
         ReadDatagram(datagram);
     }
 }

@@ -21,18 +21,17 @@ public:
     explicit UDPworker(QObject *parent = nullptr);
     void InitSockets( void );
     void ReadDatagram( QNetworkDatagram datagram);
-    void SendDatagram(QByteArray data, ESocketType socketType);
+    void SendDatagram(QByteArray data);
 
 
 private slots:
     void readPendingDatagrams(void);
 
 private:
-    QUdpSocket* datetimeUdpSocket;
-    QUdpSocket* messageUdpSocket;
+    QUdpSocket* serviceUdpSocket;
 
 signals:
-    void sig_dataToGUI(QVariant data);
+    void sig_dataToGUI(QVariant data, uint32_t data_size, QHostAddress senderAddress);
 
 };
 

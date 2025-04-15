@@ -21,7 +21,7 @@ public:
 
 private slots:
     void on_pb_start_clicked();
-    void DisplayTime(QVariant data);
+    void DisplayTime(QVariant data, uint32_t data_size, QHostAddress senderAddress);
     void on_pb_stop_clicked();
     void on_pb_send_datagram_clicked();
 
