@@ -37,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(client, &TCPclient::sig_sendFreeSize, this, &MainWindow::DisplayFreeSpace);
     connect(client, &TCPclient::sig_SendReplyForSetData, this, &MainWindow::SetDataReply);
     connect(client, &TCPclient::sig_sendStat, this, &MainWindow::DisplayStat);
+    connect(client, &TCPclient::sig_Error, this, &MainWindow::DisplayError);
 
 
  /*
@@ -74,8 +75,12 @@ void MainWindow::DisplayStat(StatServer stat) {
 }
 void MainWindow::DisplayError(uint16_t error) {
     switch (error) {
-    case ERR_NO_FREE_SPACE:
-    case ERR_NO_FUNCT:
+    case ERR_NO_FREE_SPACE: {
+        ui->tb_result->append("No free space!");
+    }
+    case ERR_NO_FUNCT: {
+        ui->tb_result->append("The functionality is not implemented");
+    }
     default:
         break;
     }

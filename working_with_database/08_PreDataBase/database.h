@@ -3,7 +3,8 @@
 
 #include <QTableWidget>
 #include <QObject>
-
+#include <QSqlDatabase>
+#include <QSqlError>
 
 
 #define POSTGRE_DRIVER "QPSQL"

@@ -1,5 +1,7 @@
 #include "database.h"
 
+#include <QSqlQuery>
+
 DataBase::DataBase(QObject *parent)
     : QObject{parent}
 {
@@ -45,7 +47,7 @@ void DataBase::ConnectToDataBase(QVector<QString> data)
 
 
     bool status;
-    status = dataBase->open( );
+    status = dataBase->open();
     emit sig_SendStatusConnection(status);
 
 }
@@ -65,11 +67,12 @@ void DataBase::DisconnectFromDataBase(QString nameDb)
  * \param request - SQL запрос
  * \return
  */
-void DataBase::RequestToDB(QString request)
-{
+void DataBase::RequestToDB(QString request) {
+    QSqlQuery query;
 
-    ///Тут должен быть код ДЗ
-
+    if (query.exec("SELECT title, description FROM film f JOIN film_category fc on f.film_id = fc.film_id JOIN category c on c.category_id = fc.category_id WHERE c.name = 'Comedy' ('Horror')")) {
+        qDebug() << "Yes";
+    }
 }
 
 /*!

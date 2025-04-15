@@ -97,10 +97,10 @@ void MainWindow::on_act_connect_triggered()
 /*!
  * \brief Обработчик кнопки "Получить"
  */
-void MainWindow::on_pb_request_clicked()
-{
+void MainWindow::on_pb_request_clicked() {
 
-    ///Тут должен быть код ДЗ
+    qDebug() << ui->cb_category->currentIndex();
+    emit sig_RequestToDb("");
 
 }
 
