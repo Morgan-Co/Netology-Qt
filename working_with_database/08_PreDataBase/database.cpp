@@ -2,6 +2,7 @@
 
 #include <QSqlQuery>
 #include <QSqlQueryModel>
+#include <QSqlTableModel>
 
 DataBase::DataBase(QObject *parent)
     : QObject{parent}
@@ -67,63 +68,78 @@ void DataBase::DisconnectFromDataBase(QString nameDb)
  * \return
  */
 void DataBase::RequestToDB(QString request) {
-    QString str_query = request != "" ? R"(
-        SELECT title, description
-        FROM film f
-        JOIN film_category fc ON f.film_id = fc.film_id
-        JOIN category c ON c.category_id = fc.category_id
-        WHERE c.name = :genre
-    )" : R"(
-        SELECT title, description
-        FROM film f
-        JOIN film_category fc ON f.film_id = fc.film_id
-        JOIN category c ON c.category_id = fc.category_id
-    )";
+    if (!dataBase->isOpen()) {
+        qDebug() << "Database is NOT open!";
+        return;
+    }
 
-    if (dataBase->isOpen()) {
+    QTableWidget *tableWg = new QTableWidget();
+
+    if (request == "") {
+        // Все фильмы — используем QSqlTableModel
+        QSqlTableModel *model = new QSqlTableModel(nullptr, *dataBase);
+        model->setTable("film");
+        model->select();
+
+        tableWg->setRowCount(model->rowCount());
+        tableWg->setColumnCount(2);
+        tableWg->setHorizontalHeaderLabels(QStringList() << "Название фильма" << "Описание фильма");
+
+        for (int row = 0; row < model->rowCount(); ++row) {
+            QString title = model->data(model->index(row, model->fieldIndex("title"))).toString();
+            QString description = model->data(model->index(row, model->fieldIndex("description"))).toString();
+
+            tableWg->setItem(row, 0, new QTableWidgetItem(title));
+            tableWg->setItem(row, 1, new QTableWidgetItem(description));
+        }
+
+        delete model;
+    } else {
+        // Фильтр по жанру — используем QSqlQueryModel
+        QSqlQueryModel *model = new QSqlQueryModel();
         QSqlQuery query(*dataBase);
 
-        query.prepare(str_query);
-        if (request != "") query.bindValue(":genre", request);
+        query.prepare(R"(
+            SELECT f.title AS "Название фильма", f.description AS "Описание фильма"
+            FROM film f
+            JOIN film_category fc ON f.film_id = fc.film_id
+            JOIN category c ON c.category_id = fc.category_id
+            WHERE c.name = :genre
+        )");
+
+        query.bindValue(":genre", request);
         if (!query.exec()) {
-            qDebug() << "Query execution failed:" << query.lastError().text();
+            qDebug() << "Query error:" << query.lastError().text();
+            delete tableWg;
             return;
         }
 
-        qDebug() << "Number of rows returned:" << query.size();
-
-        QSqlQueryModel *model = new QSqlQueryModel();
         model->setQuery(std::move(query));
-
         if (model->lastError().isValid()) {
             qDebug() << "Model error:" << model->lastError().text();
+            delete tableWg;
             return;
         }
 
-        qDebug() << "Database is open";
-        qDebug() << "Executed request:" << str_query;
-        qDebug() << "Bound value for :genre:" << request;
-
-        QTableWidget *tableWg = new QTableWidget();
         tableWg->setRowCount(model->rowCount());
         tableWg->setColumnCount(model->columnCount());
+        for (int i = 0; i < model->columnCount(); ++i) {
+            tableWg->setHorizontalHeaderItem(i, new QTableWidgetItem(model->headerData(i, Qt::Horizontal).toString()));
+        }
 
         for (int row = 0; row < model->rowCount(); ++row) {
             for (int col = 0; col < model->columnCount(); ++col) {
-                QTableWidgetItem *newItem = new QTableWidgetItem(model->data(model->index(row, col)).toString());
-                tableWg->setItem(row, col, newItem);
+                QTableWidgetItem *item = new QTableWidgetItem(model->data(model->index(row, col)).toString());
+                tableWg->setItem(row, col, item);
             }
         }
 
-        int typeR = 1;
-        emit sig_SendDataFromDB(tableWg, typeR);
-    } else {
-        qDebug() << "Database is NOT open!";
+        delete model;
     }
+
+    int typeR = 1;
+    emit sig_SendDataFromDB(tableWg, typeR);
 }
-
-
-
 
 /*!
  * @brief Метод возвращает последнюю ошибку БД
