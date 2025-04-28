@@ -72,11 +72,9 @@ void DataBase::RequestToDB(QString request) {
         qDebug() << "Database is NOT open!";
         return;
     }
-
     QTableWidget *tableWg = new QTableWidget();
 
-    if (request == "") {
-        // Все фильмы — используем QSqlTableModel
+    if(request == "") {
         QSqlTableModel *model = new QSqlTableModel(nullptr, *dataBase);
         model->setTable("film");
         model->select();
@@ -95,7 +93,6 @@ void DataBase::RequestToDB(QString request) {
 
         delete model;
     } else {
-        // Фильтр по жанру — используем QSqlQueryModel
         QSqlQueryModel *model = new QSqlQueryModel();
         QSqlQuery query(*dataBase);
 
@@ -104,19 +101,18 @@ void DataBase::RequestToDB(QString request) {
             FROM film f
             JOIN film_category fc ON f.film_id = fc.film_id
             JOIN category c ON c.category_id = fc.category_id
-            WHERE c.name = :genre
-        )");
+            WHERE c.name = :genre)");
 
         query.bindValue(":genre", request);
         if (!query.exec()) {
-            qDebug() << "Query error:" << query.lastError().text();
+            qDebug() << "Query error: " << query.lastError().text();
             delete tableWg;
             return;
         }
 
-        model->setQuery(std::move(query));
+        model->setQuery((std::move(query)));
         if (model->lastError().isValid()) {
-            qDebug() << "Model error:" << model->lastError().text();
+            qDebug() << "Model error: " << model->lastError().text();
             delete tableWg;
             return;
         }

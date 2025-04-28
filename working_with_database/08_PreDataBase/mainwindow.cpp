@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include <QStandardItemModel>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -98,9 +99,9 @@ void MainWindow::on_act_connect_triggered()
 }
 
 void MainWindow::on_pb_clear_clicked() {
-    ui->tb_result->clear();
-    ui->tb_result->setRowCount(0);
-    ui->tb_result->setColumnCount(0);
+    if (auto model = qobject_cast<QStandardItemModel*>(ui->tb_result->model())) {
+        model->clear();
+    }
 }
 
 /*!
@@ -119,6 +120,7 @@ void MainWindow::on_pb_request_clicked() {
     }
     case 2: {
         emit sig_RequestToDb("Horror");
+        break;
     }
     default:
         break;
@@ -133,34 +135,34 @@ void MainWindow::on_pb_request_clicked() {
  */
 void MainWindow::ScreenDataFromDB(const QTableWidget *widget, int typeRequest)
 {
-    // Убедимся, что widget не пустой
     if (widget == nullptr) {
         qDebug() << "Widget is nullptr!";
         return;
     }
 
-    // Получаем количество строк и столбцов в переданной таблице
     int rowCount = widget->rowCount();
     int columnCount = widget->columnCount();
 
-    // Проверим тип запроса и обработаем по-разному, если нужно
     if (typeRequest == 1) {
-        // Например, для первого типа запроса: выводим данные в ui.tb_result
-        ui->tb_result->setRowCount(rowCount);
-        ui->tb_result->setColumnCount(columnCount);
+        // Создаем новую модель
+        QStandardItemModel *model = new QStandardItemModel(rowCount, columnCount, this);
 
-        // Переносим данные из widget в ui->tb_result
+        // Переносим данные из переданной таблицы в модель
         for (int row = 0; row < rowCount; ++row) {
             for (int col = 0; col < columnCount; ++col) {
-                // Получаем данные из переданной таблицы
-                QString data = widget->item(row, col)->text();
-
-                // Устанавливаем данные в целевую таблицу
-                ui->tb_result->setItem(row, col, new QTableWidgetItem(data));
+                if (widget->item(row, col)) {
+                    QString data = widget->item(row, col)->text();
+                    QStandardItem *item = new QStandardItem(data);
+                    model->setItem(row, col, item);
+                }
             }
         }
+
+        // Устанавливаем модель в tb_result
+        ui->tb_result->setModel(model);
     }
 }
+
 
 
 /*!
